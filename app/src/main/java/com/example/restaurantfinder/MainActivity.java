@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.Window;
@@ -18,7 +19,6 @@ import java.util.List;
 
 
 public class MainActivity extends FragmentActivity implements View.OnClickListener {
-
     private ViewPager viewPager;
     private FragmentPagerAdapter adapter;
     private List<Fragment> fragments;
@@ -26,10 +26,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     //Fragments related layout
     private LinearLayout tabRestaurant;
     private LinearLayout tabStoredList;
-
-    //Image of tab buttons
-    private ImageButton restaurantImage;
-    private ImageButton storedListImage;
 
     private TextView restaurantText;
     private TextView storedListText;
@@ -75,7 +71,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
             @Override
             public void onPageSelected(int position) {
-                //设置position对应的集合中的Fragment
                 viewPager.setCurrentItem(position);
                 resetText();
                 resetBackground();
@@ -100,9 +95,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         tabRestaurant = (LinearLayout) findViewById(R.id.tab_Restaurant);
         tabStoredList = (LinearLayout) findViewById(R.id.tab_StoredList);
-
-        restaurantImage = (ImageButton) findViewById(R.id.tab_Restaurant_image);
-        storedListImage = (ImageButton) findViewById(R.id.tab_StoredList_image);
 
         restaurantText = (TextView) findViewById(R.id.tab_Restaurant_text);
         storedListText = (TextView) findViewById(R.id.tab_StoredList_text);
@@ -148,7 +140,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         restaurantText.setTextColor(getResources().getColor(R.color.white));
         storedListText.setTextColor(getResources().getColor(R.color.white));
     }
-    //Reset Tab backgroud color to origin blue
+    //Reset Tab background color to origin blue
     private void resetBackground() {
         tabRestaurant.setBackgroundColor(getResources().getColor(R.color.design_default_color_primary));
         tabStoredList.setBackgroundColor(getResources().getColor(R.color.design_default_color_primary));

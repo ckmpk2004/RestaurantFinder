@@ -1,7 +1,6 @@
 package com.example.restaurantfinder;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,6 +8,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,23 +18,16 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-
+import android.widget.TextView;
 
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import android.location.LocationManager;
-import android.widget.TextView;
-
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,12 +52,6 @@ public class restaurantFragment extends Fragment {
     private ArrayList<DataSnapshot> datas = new ArrayList<>();//For google map
 
 
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-    }
 
 
     @Nullable
@@ -118,14 +105,15 @@ public class restaurantFragment extends Fragment {
     }
     @Override
     public void onResume(){
-            database = FirebaseDatabase.getInstance();
-            rootRef = database.getReference("restaurants/" + "HangHau");
+        //Create List of shop base on user current Location
+        //Then put them into List View
+        listView = (ListView) view.findViewById(R.id.list_restaurant);
+        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this.getActivity(), android.R.layout.simple_list_item_1, restaurants);
+        listView.setAdapter(arrayAdapter);
 
-            //Create List of shop base on user current Location
-            //Then put them into List View
-            listView = (ListView) view.findViewById(R.id.list_restaurant);
-            final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this.getActivity(), android.R.layout.simple_list_item_1, restaurants);
-            listView.setAdapter(arrayAdapter);
+
+        //Try Connect FireBase
+        if (getFireBase("HangHau")) {
 
             //Whenever a single data get from Firebase
             rootRef.addChildEventListener(new ChildEventListener() {
@@ -141,18 +129,18 @@ public class restaurantFragment extends Fragment {
                     //When User clicked ListView Item
                     listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
-                        public void onItemClick(AdapterView<?> parent, View v,int position, long id) {
-                            Intent newIntent = new Intent(getActivity(),GoogleMapActivity.class);
+                        public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                            Intent newIntent = new Intent(getActivity(), GoogleMapActivity.class);
 
                             //ListView items'X Y coord
                             final String Lat = datas.get(position).child("lit").getValue().toString();
                             final String Long = datas.get(position).child("long").getValue().toString();
 
                             //Pass Data to Google Map Activity
-                            newIntent.putExtra("Lat_EXTRA",Lat);
-                            newIntent.putExtra("Long_EXTRA",Long );
-                            newIntent.putExtra("Current_Lat_EXTRA",curLat);
-                            newIntent.putExtra("Current_Long_EXTRA",curLong);
+                            newIntent.putExtra("Lat_EXTRA", Lat);
+                            newIntent.putExtra("Long_EXTRA", Long);
+                            newIntent.putExtra("Current_Lat_EXTRA", curLat);
+                            newIntent.putExtra("Current_Long_EXTRA", curLong);
 
                             startActivity(newIntent);
                         }
@@ -175,10 +163,10 @@ public class restaurantFragment extends Fragment {
                 public void onCancelled(@NonNull DatabaseError databaseError) {
                 }
             });
-
-
-
-
+        } else {
+            restaurants.add("Error Occur: FireBase Connection Failure");
+            arrayAdapter.notifyDataSetChanged();
+        }
         super.onResume();
     }
 
@@ -187,4 +175,16 @@ public class restaurantFragment extends Fragment {
         restaurants.removeAll(restaurants);
         super.onPause();
     }
+
+    public boolean getFireBase(String path) {
+        try {
+            database = FirebaseDatabase.getInstance();
+            rootRef = database.getReference("restaurants/" + path);
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
+

@@ -54,13 +54,14 @@ public class GoogleMapActivity extends FragmentActivity implements OnMapReadyCal
         double shop_lat = Double.parseDouble(Lat);
         double shop_Long = Double.parseDouble(Long);
 
-        // Add a marker in Sydney and move the camera
+        // Add markers and line
         LatLng shop = new LatLng(shop_lat, shop_Long);
         LatLng curLocation = new LatLng(curLat, curLong);
-        mMap.addMarker(new MarkerOptions().position(shop).title("Targeted Shop Location"));
-        mMap.addMarker(new MarkerOptions().position(curLocation).title("Your current location"));
+        mMap.addMarker(new MarkerOptions().position(shop).title("Targeted Shop Location"));//Marker of targeted shop
+        mMap.addMarker(new MarkerOptions().position(curLocation).title("Your current location"));//Marker of user current location
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(shop, 18f));
 
+        //Red Line between 2 markers
         mMap.addPolyline(new PolylineOptions()
                 .add(shop)
                 .add(curLocation)

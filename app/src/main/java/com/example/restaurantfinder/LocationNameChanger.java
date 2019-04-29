@@ -14,23 +14,21 @@ public class LocationNameChanger {
 
         if (Locale.getDefault().getLanguage() == "en") {//Check System Language
 
-            if (address.contains("Tseung")) {
-                newName = "TseungKwanO";
-            } else if (address.contains("Hang Hau")) {
+            if (address.contains("Hang Hau")) {
                 newName = "HangHau";
-            } else if (address.contains("Sha Tin")) {
-                newName = "ShaTin";
+            } else if (address.contains("Po Lam")) {
+                newName = "PoLam";
             } else {
                 newName = "HangHau";
             }//default, prevent error
 
         } else if (Locale.getDefault().getLanguage() == "zh") {
-            if (address.contains("將軍澳")) {
-                newName = "TseungKwanO_ZH";
-            } else if (address.contains("坑口")) {
+
+
+            if (address.contains("坑口")) {
                 newName = "HangHau_ZH";
-            } else if (address.contains("沙田")) {
-                newName = "ShaTin_ZH";
+            } else if (address.contains("寶琳")) {
+                newName = "PoLam_ZH";
             } else {
                 newName = "HangHau_ZH";
             }//default, prevent error

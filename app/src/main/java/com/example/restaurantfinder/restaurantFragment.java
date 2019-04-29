@@ -57,40 +57,9 @@ public class restaurantFragment extends Fragment {
     private ArrayList<DataSnapshot> datas = new ArrayList<>();//For google map
 
 
+    private Location location;
     private LocationManager locationManager;
-
-    private LocationListener listener = new LocationListener() {
-        @Override
-        public void onLocationChanged(Location location) {
-            curLat = location.getLatitude();
-            curLong = location.getLongitude();
-
-            Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
-            List<Address> addresses = null;
-            try {
-                addresses = geocoder.getFromLocation(curLat, curLong, 1);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            currentArea = addresses.get(0).getAddressLine(0);
-            textView.setText(currentArea);
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-        }
-    };
-
-
+    private LocationListener listener;
 
 
     @Nullable
@@ -103,6 +72,9 @@ public class restaurantFragment extends Fragment {
     }
     @Override
     public void onResume(){
+
+        updateLocation();
+
         //Grant permission
         locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) !=
@@ -112,21 +84,31 @@ public class restaurantFragment extends Fragment {
         }
 
         //Get Current location
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
+        location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        curLat = location.getLatitude();
+        curLong = location.getLongitude();
 
+        Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
+        List<Address> addresses = null;
+        try {
+            addresses = geocoder.getFromLocation(curLat, curLong, 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        currentArea = addresses.get(0).getAddressLine(0);
+        textView.setText(currentArea);
         //Create List of shop base on user current Location
         //Then put them into List View
+
         listView = (ListView) view.findViewById(R.id.list_restaurant);
         final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this.getActivity(), android.R.layout.simple_list_item_1, restaurants);
         listView.setAdapter(arrayAdapter);
 
 
         //Do..While.. for Async location listener
-        do {
             //Change location to FireBase path
-            path = nameChanger.chName(currentArea);
 
-
+        path = nameChanger.chName(currentArea);
             if (getFireBase(path)) {//Connect DB by path
 
                 //Whenever a single data get from FireBase
@@ -157,6 +139,7 @@ public class restaurantFragment extends Fragment {
                                 newIntent.putExtra("Current_Long_EXTRA", curLong);
 
                                 startActivity(newIntent);
+                                updateLocation();
                             }
                         });
                     }
@@ -180,23 +163,19 @@ public class restaurantFragment extends Fragment {
             } else {
                 restaurants.add("Error Occur: FireBase Connection Failure");
                 arrayAdapter.notifyDataSetChanged();
-            }
-        } while (
-                currentArea != ""
-        );
 
+            }
         super.onResume();
     }
 
     @Override
     public void onPause(){
         restaurants.removeAll(restaurants);
-        locationManager.removeUpdates(listener);
-        currentArea = "";
+
         super.onPause();
     }
 
-    public boolean getFireBase(String path) {
+    private boolean getFireBase(String path) {
         try {
             database = FirebaseDatabase.getInstance();
             rootRef = database.getReference("restaurants/" + path);
@@ -206,5 +185,37 @@ public class restaurantFragment extends Fragment {
             return false;
         }
     }
+
+    //Update current Location
+    private void updateLocation() {
+        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_LOCATION);
+        }
+
+
+        LocationListener listener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+            }
+        };
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
+    }
+
 }
 

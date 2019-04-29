@@ -20,7 +20,7 @@ public class LocationNameChangerTest {
 
             assertEquals(expected, output);
         } else if (Locale.getDefault().getLanguage() == "zh") {
-            String input = "香港坑口培成路";
+            String input = "坑口";
             String output;
             String expected = "HangHau_ZH";
 

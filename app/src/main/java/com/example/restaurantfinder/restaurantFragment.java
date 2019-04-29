@@ -34,6 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+//FireBase Related
+//List
+//Own class
+
 public class restaurantFragment extends Fragment {
     private View view;
     private ListView listView;
@@ -42,14 +46,49 @@ public class restaurantFragment extends Fragment {
     private DatabaseReference rootRef;
 
     private static final int REQUEST_LOCATION = 1;
-    private double latitude, longitude;
     private double curLat, curLong;
-    private String currentArea;
+    private String currentArea = "";
+    private LocationNameChanger nameChanger = new LocationNameChanger();
+    private String path;
 
 
     //Array List
     private ArrayList<String> restaurants = new ArrayList<>();//For display restaurant
     private ArrayList<DataSnapshot> datas = new ArrayList<>();//For google map
+
+
+    private LocationManager locationManager;
+
+    private LocationListener listener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            curLat = location.getLatitude();
+            curLong = location.getLongitude();
+
+            Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
+            List<Address> addresses = null;
+            try {
+                addresses = geocoder.getFromLocation(curLat, curLong, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            currentArea = addresses.get(0).getAddressLine(0);
+            textView.setText(currentArea);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+        }
+    };
 
 
 
@@ -60,51 +99,21 @@ public class restaurantFragment extends Fragment {
         view = i.inflate(R.layout.tab_restaurant, container, false);
         textView = (TextView) view.findViewById(R.id.test_textView);
 
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        return view;
+    }
+    @Override
+    public void onResume(){
+        //Grant permission
+        locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_LOCATION);
         }
 
+        //Get Current location
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
 
-          LocationListener listener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-
-                Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
-                List<Address> addresses = null;
-                try {
-                    addresses = geocoder.getFromLocation(latitude,longitude, 1);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                String cityName = addresses.get(0).getAddressLine(0);
-
-                curLat = location.getLatitude();
-                curLong = location.getLongitude();
-
-                currentArea = cityName;
-                textView.setText(cityName);
-            }
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
-            @Override
-            public void onProviderEnabled(String provider) {}
-            @Override
-            public void onProviderDisabled(String provider) {}
-        };
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,listener);
-
-
-
-        return view;
-    }
-    @Override
-    public void onResume(){
         //Create List of shop base on user current Location
         //Then put them into List View
         listView = (ListView) view.findViewById(R.id.list_restaurant);
@@ -112,67 +121,78 @@ public class restaurantFragment extends Fragment {
         listView.setAdapter(arrayAdapter);
 
 
-        //Try Connect FireBase
-        if (getFireBase("HangHau")) {
-
-            //Whenever a single data get from Firebase
-            rootRef.addChildEventListener(new ChildEventListener() {
-                @Override
-                public void onChildAdded(final DataSnapshot dataSnapshot, String s) {
-                    final String shopName = dataSnapshot.getKey();
-                    final String shopLocation = (String) dataSnapshot.child("location").getValue();
-                    restaurants.add(shopName + "\n" + shopLocation);
-                    datas.add(dataSnapshot);
-                    arrayAdapter.notifyDataSetChanged();
+        //Do..While.. for Async location listener
+        do {
+            //Change location to FireBase path
+            path = nameChanger.chName(currentArea);
 
 
-                    //When User clicked ListView Item
-                    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                            Intent newIntent = new Intent(getActivity(), GoogleMapActivity.class);
+            if (getFireBase(path)) {//Connect DB by path
 
-                            //ListView items'X Y coord
-                            final String Lat = datas.get(position).child("lit").getValue().toString();
-                            final String Long = datas.get(position).child("long").getValue().toString();
+                //Whenever a single data get from FireBase
+                rootRef.addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(final DataSnapshot dataSnapshot, String s) {
+                        final String shopName = dataSnapshot.getKey();
+                        final String shopLocation = (String) dataSnapshot.child("location").getValue();
+                        restaurants.add(shopName + "\n" + shopLocation);
+                        datas.add(dataSnapshot);
+                        arrayAdapter.notifyDataSetChanged();
 
-                            //Pass Data to Google Map Activity
-                            newIntent.putExtra("Lat_EXTRA", Lat);
-                            newIntent.putExtra("Long_EXTRA", Long);
-                            newIntent.putExtra("Current_Lat_EXTRA", curLat);
-                            newIntent.putExtra("Current_Long_EXTRA", curLong);
 
-                            startActivity(newIntent);
-                        }
-                    });
-                }
+                        //When User clicked ListView Item
+                        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                            @Override
+                            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                                Intent newIntent = new Intent(getActivity(), GoogleMapActivity.class);
 
-                @Override
-                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                }
+                                //ListView items'X Y coord
+                                final String Lat = datas.get(position).child("lit").getValue().toString();
+                                final String Long = datas.get(position).child("long").getValue().toString();
 
-                @Override
-                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-                }
+                                //Pass Data to Google Map Activity
+                                newIntent.putExtra("Lat_EXTRA", Lat);
+                                newIntent.putExtra("Long_EXTRA", Long);
+                                newIntent.putExtra("Current_Lat_EXTRA", curLat);
+                                newIntent.putExtra("Current_Long_EXTRA", curLong);
 
-                @Override
-                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                }
+                                startActivity(newIntent);
+                            }
+                        });
+                    }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-                }
-            });
-        } else {
-            restaurants.add("Error Occur: FireBase Connection Failure");
-            arrayAdapter.notifyDataSetChanged();
-        }
+                    @Override
+                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                    }
+
+                    @Override
+                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                    }
+
+                    @Override
+                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                    }
+                });
+            } else {
+                restaurants.add("Error Occur: FireBase Connection Failure");
+                arrayAdapter.notifyDataSetChanged();
+            }
+        } while (
+                currentArea != ""
+        );
+
         super.onResume();
     }
 
     @Override
     public void onPause(){
         restaurants.removeAll(restaurants);
+        locationManager.removeUpdates(listener);
+        currentArea = "";
         super.onPause();
     }
 

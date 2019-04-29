@@ -5,21 +5,15 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 
 public class MainActivity extends FragmentActivity implements View.OnClickListener {
@@ -41,6 +35,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
 
+        checkLanguage();
         connectViews();
         tabClickEvent();
         createFragments();
@@ -150,4 +145,16 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         tabRestaurant.setBackgroundColor(getResources().getColor(R.color.design_default_color_primary));
         tabStoredList.setBackgroundColor(getResources().getColor(R.color.design_default_color_primary));
     }
+
+    private void checkLanguage() {
+        if (Locale.getDefault().getLanguage() == "zh") {
+            restaurantText = (TextView) findViewById(R.id.tab_Restaurant_text);
+            storedListText = (TextView) findViewById(R.id.tab_StoredList_text);
+
+            restaurantText.setText(R.string.tab_text_1_zh);
+            storedListText.setText(R.string.tab_text_2_zh);
+        }
+    }
+
+
 }

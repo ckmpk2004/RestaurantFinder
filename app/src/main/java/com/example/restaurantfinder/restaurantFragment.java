@@ -22,6 +22,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -40,7 +41,7 @@ import java.util.Locale;
 
 public class restaurantFragment extends Fragment {
     private View view;
-    private ListView listView;
+    private ListView listView_Rest;
     private TextView textView;
     private FirebaseDatabase database;
     private DatabaseReference rootRef;
@@ -68,8 +69,10 @@ public class restaurantFragment extends Fragment {
         view = i.inflate(R.layout.tab_restaurant, container, false);
         textView = (TextView) view.findViewById(R.id.test_textView);
 
+
         return view;
     }
+
     @Override
     public void onResume(){
 
@@ -96,18 +99,21 @@ public class restaurantFragment extends Fragment {
             e.printStackTrace();
         }
         currentArea = addresses.get(0).getAddressLine(0);
-        textView.setText(currentArea);
+
+        if (Locale.getDefault().getLanguage() == "en") {
+            textView.setText("Your Current Location: " + currentArea);
+        } else if (Locale.getDefault().getLanguage() == "zh") {
+            textView.setText("現在位置: " + currentArea);
+        }
         //Create List of shop base on user current Location
         //Then put them into List View
 
-        listView = (ListView) view.findViewById(R.id.list_restaurant);
+        listView_Rest = (ListView) view.findViewById(R.id.list_restaurant);
         final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this.getActivity(), android.R.layout.simple_list_item_1, restaurants);
-        listView.setAdapter(arrayAdapter);
 
+        listView_Rest.setAdapter(arrayAdapter);
 
-        //Do..While.. for Async location listener
             //Change location to FireBase path
-
         path = nameChanger.chName(currentArea);
             if (getFireBase(path)) {//Connect DB by path
 
@@ -121,9 +127,8 @@ public class restaurantFragment extends Fragment {
                         datas.add(dataSnapshot);
                         arrayAdapter.notifyDataSetChanged();
 
-
                         //When User clicked ListView Item
-                        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        listView_Rest.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
                             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
                                 Intent newIntent = new Intent(getActivity(), GoogleMapActivity.class);
@@ -142,20 +147,38 @@ public class restaurantFragment extends Fragment {
                                 updateLocation();
                             }
                         });
+
+                        listView_Rest.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                            @Override
+                            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
+
+                                final String Lat = datas.get(position).child("lit").getValue().toString();
+                                final String Long = datas.get(position).child("long").getValue().toString();
+                                final String ShopName = datas.get(position).getKey();
+
+                                MainActivity.myBundle.putString("ShopName", ShopName);
+
+                                if (Locale.getDefault().getLanguage() == "en") {
+                                    Toast.makeText(getActivity(), "Added to Stored List", Toast.LENGTH_SHORT).show();
+                                } else if (Locale.getDefault().getLanguage() == "zh") {
+                                    Toast.makeText(getActivity(), "已加至我的清單", Toast.LENGTH_SHORT).show();
+                                }
+                                parent.refreshDrawableState();
+                                return true;
+                            }
+                        });
                     }
 
                     @Override
                     public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                     }
-
                     @Override
                     public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
                     }
-
                     @Override
                     public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                     }
-
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
                     }
@@ -200,15 +223,12 @@ public class restaurantFragment extends Fragment {
             @Override
             public void onLocationChanged(Location location) {
             }
-
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
             }
-
             @Override
             public void onProviderEnabled(String provider) {
             }
-
             @Override
             public void onProviderDisabled(String provider) {
             }

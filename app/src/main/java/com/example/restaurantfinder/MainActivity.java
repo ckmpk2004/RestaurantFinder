@@ -21,6 +21,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private FragmentPagerAdapter adapter;
     private List<Fragment> fragments;
 
+    public static Bundle myBundle = new Bundle();
+
 
     //Fragments related layout
     private LinearLayout tabRestaurant;
@@ -39,6 +41,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         connectViews();
         tabClickEvent();
         createFragments();
+
+        restaurantText.setTextColor(getResources().getColor(R.color.limegreen));
+        tabRestaurant.setBackgroundColor(getResources().getColor(R.color.slateblue));
     }
 
     //Create 2 Fragment into list
@@ -81,6 +86,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             public void onPageScrollStateChanged(int state) {
             }
         });
+
     }
 
     //Tab click event handler
